@@ -25,7 +25,7 @@ from tensorflow.keras.preprocessing.image import array_to_img
 # =========================
 LATENT_DIM = 128
 BATCH_SIZE = 128
-EPOCHS = 20
+EPOCHS = 2000
 IMAGE_DIR = "images"
 MODEL_DIR = "models"
 
@@ -208,19 +208,23 @@ class FashionGAN(Model):
 # Callback
 # =========================
 class ModelMonitor(Callback):
-    def __init__(self, num_img=3, latent_dim=128):
+    def __init__(self, num_img=3, latent_dim=128, save_interval=100):
         super().__init__()
         self.num_img = num_img
         self.latent_dim = latent_dim
+        self.save_interval = save_interval
 
     def on_epoch_end(self, epoch, logs=None):
+        if (epoch + 1) % self.save_interval != 0:
+            return
+
         random_latent_vectors = tf.random.normal((self.num_img, self.latent_dim))
-        generated_images = self.model.generator(random_latent_vectors, training=False)
-        generated_images = generated_images * 255.0
+        generated_images = self.model.generator(random_latent_vectors)
+        generated_images *= 255
 
         for i in range(self.num_img):
             img = array_to_img(generated_images[i])
-            img.save(os.path.join(IMAGE_DIR, f"generated_img_epoch{epoch+1}_{i}.png"))
+            img.save(f"images/generated_epoch_{epoch+1}_{i}.png")
 
 # =========================
 # Train
@@ -228,7 +232,11 @@ class ModelMonitor(Callback):
 fash_gan = FashionGAN(generator, discriminator, latent_dim=LATENT_DIM)
 fash_gan.compile(g_opt, d_opt, g_loss_fn, d_loss_fn)
 
-hist = fash_gan.fit(ds, epochs=EPOCHS, callbacks=[ModelMonitor()])
+hist = fash_gan.fit(
+    ds,
+    epochs=2000,
+    callbacks=[ModelMonitor(num_img=4, save_interval=100)]
+)
 
 # =========================
 # Save models
