@@ -1,5 +1,4 @@
-FROM python:3.11-slim
-
+FROM tensorflow/tensorflow:latest-gpu
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
